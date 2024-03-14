@@ -6,6 +6,8 @@ import StartScreen from './StartScreen';
 
 import { useEffect, useReducer } from 'react';
 import Question from './Question';
+import NextButton from './NextButton';
+import Progress from './Progress';
 const initialState = {
   questions: [],
   //'loading','error','ready','active','finished'
@@ -42,16 +44,22 @@ function reducer(state, action) {
             ? state.points + question.points
             : state.points,
       };
+    case 'nextQuestion':
+      return { ...state, index: state.index++, answer: null };
     default:
       throw new Error('Invalid action type');
   }
 }
 export default function App() {
-  const [{ questions, status, index, answer }, dispatch] = useReducer(
+  const [{ questions, status, index, answer, points }, dispatch] = useReducer(
     reducer,
     initialState
   );
   const numberQuestions = questions.length;
+  const maxPossiblePoints = questions.reduce(
+    (prev, cur) => cur.points + prev,
+    0
+  );
   useEffect(() => {
     fetch('http://localhost:8000/questions')
       .then((res) => res.json())
@@ -70,11 +78,21 @@ export default function App() {
           <StartScreen numQuestions={numberQuestions} dispatch={dispatch} />
         )}
         {status === 'active' && (
-          <Question
-            answer={answer}
-            dispatch={dispatch}
-            question={questions[index]}
-          />
+          <>
+            <Progress
+              numQuestions={numberQuestions}
+              index={index}
+              points={points}
+              maxPossiblePoints={maxPossiblePoints}
+              answer={answer}
+            />
+            <Question
+              answer={answer}
+              dispatch={dispatch}
+              question={questions[index]}
+            />
+            <NextButton dispatch={dispatch} answer={answer} />
+          </>
         )}
       </Main>
     </div>
